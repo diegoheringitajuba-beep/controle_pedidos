@@ -212,8 +212,39 @@ def detalhe_importacao(lote_id):
 
 @app.route('/historico_pedidos')
 def historico_pedidos():
-    itens = PedidoItens.query.order_by(PedidoItens.ultima_atualizacao.desc()).limit(500).all()
-    return render_template('historico_pedidos.html', pedidos=itens)
+    # Fazemos um Outer Join para pegar todos os itens, 
+    # mesmo aqueles que ainda não têm um registro de mudança
+    query = db.session.query(
+        PedidoItens,
+        HistoricoMudanca.status_anterior,
+        HistoricoMudanca.status_novo
+    ).outerjoin(
+        HistoricoMudanca, 
+        PedidoItens.codigo_barras == HistoricoMudanca.codigo_barras
+    ).order_by(PedidoItens.id.desc()).all()
+
+    # Organizar os dados para o template
+    pedidos_processados = []
+    for item, status_ant, status_nov in query:
+        # Criamos um dicionário ou objeto temporário para o template
+        pedidos_processados.append({
+            'pedido': item.pedido,
+            'colecao': item.colecao,
+            'item_desc': item.item_desc,
+            'artigo': item.artigo,
+            'tamanho': item.tamanho,
+            'codigo_barras': item.codigo_barras,
+            'status': item.status,
+            'status_anterior': status_ant if status_ant else "---", # Vem da HistoricoMudanca
+            'valor_liquido': item.valor_liquido,
+            'valor_un': item.valor_un,
+            'pecas': item.pecas,
+            'nota_fiscal': item.nota_fiscal,
+            'serie': item.serie,
+            'ultima_atualizacao': item.ultima_atualizacao
+        })
+
+    return render_template('historico_pedidos.html', pedidos=pedidos_processados)
 
 @app.route('/periodo/<ref>')
 def visualizar_periodo(ref):
