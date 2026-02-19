@@ -213,7 +213,7 @@ def detalhe_importacao(lote_id):
 @app.route('/historico_pedidos')
 def historico_pedidos():
     itens = PedidoItens.query.order_by(PedidoItens.ultima_atualizacao.desc()).limit(500).all()
-    return render_template('historico_pedidos.html', itens=itens)
+    return render_template('historico_pedidos.html', pedidos=itens)
 
 @app.route('/periodo/<ref>')
 def visualizar_periodo(ref):
