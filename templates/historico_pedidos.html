@@ -61,7 +61,6 @@
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="card-header bg-white border-bottom py-3">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                <!-- Abas de Status -->
                 <div class="nav nav-pills gap-1" id="pills-tab">
                     <button class="nav-link active btn-filter" onclick="applyTabFilter('Todos', this)">Todos</button>
                     <button class="nav-link text-muted btn-filter" onclick="applyTabFilter('Faturado', this)">Faturados</button>
@@ -69,7 +68,6 @@
                     <button class="nav-link text-muted btn-filter" onclick="applyTabFilter('Cancelado', this)">Cancelados</button>
                 </div>
 
-                <!-- Filtro de Coleção -->
                 <div class="d-flex align-items-center gap-2">
                     <span class="small fw-bold text-muted">Coleção:</span>
                     <select id="filterColecao" class="form-select form-select-sm border-0 bg-light shadow-none" style="min-width: 160px;" onchange="applyAllFilters()">
@@ -100,9 +98,14 @@
                         <th class="py-3 border-0 text-center" style="font-size: 0.65rem; width: 15%;">ÚLTIMA ATU.</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white">
+                <tbody class="bg-white" id="tableBody">
                     {% for item in pedidos %}
-                    <tr class="item-row" data-status="{{ item.status|lower }}" data-colecao="{{ item.colecao }}">
+                    {# Apenas prioriza se existir status_anterior E ele for diferente do atual #}
+                    {% set mudou = item.status_anterior and item.status_anterior != item.status and item.status_anterior != '---' and item.status_anterior != 'None' %}
+                    <tr class="item-row" 
+                        data-status="{{ item.status|lower }}" 
+                        data-colecao="{{ item.colecao }}"
+                        data-prioridade="{{ '1' if mudou else '0' }}">
                         <td class="ps-4">
                             <div class="fw-bold text-dark">#{{ item.pedido }}</div>
                             <div class="text-primary small fw-bold" style="font-size: 0.65rem;">
@@ -126,8 +129,9 @@
                         </td>
                         <td class="text-center">
                             <div class="d-inline-flex flex-column align-items-center p-2 rounded bg-light border">
-                                <span class="text-muted fw-bold text-uppercase mb-1" style="font-size: 0.55rem; letter-spacing: 0.5px;">De: {{ item.status_anterior }}</span>
-                                <i class="fas fa-arrow-right text-muted mx-2 d-none"></i> <!-- Pode ser usado para layout horizontal -->
+                                <span class="text-muted fw-bold text-uppercase mb-1" style="font-size: 0.55rem; letter-spacing: 0.5px;">
+                                    De: {{ item.status_anterior if item.status_anterior and item.status_anterior != 'None' else '---' }}
+                                </span>
                                 {% set s = item.status|lower %}
                                 {% if s in ['entregue', 'faturado'] %}
                                     <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3">{{ item.status }}</span>
@@ -143,7 +147,6 @@
                         <td class="text-end">
                             <div class="fw-bold text-dark">R$ {{ "{:,.2f}".format(item.valor_liquido or 0) }}</div>
                             <div class="text-muted small" style="font-size: 0.65rem;">{{ item.pecas }} un x R$ {{ "{:,.2f}".format(item.valor_un or 0) }}</div>
-                            <!-- Helper oculto para cálculo via JS -->
                             <span class="d-none raw-value">{{ item.valor_liquido or 0 }}</span>
                         </td>
                         <td>
@@ -160,7 +163,7 @@
                         </td>
                     </tr>
                     {% else %}
-                    <tr>
+                    <tr id="noDataRow">
                         <td colspan="6" class="text-center py-5">
                             <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" width="60" class="opacity-25 mb-3">
                             <p class="text-muted">Nenhum dado encontrado para os critérios selecionados.</p>
@@ -174,7 +177,6 @@
 </div>
 
 <style>
-    /* Estilos Customizados */
     .bg-success-subtle { background-color: #e8f5e9 !important; color: #2e7d32 !important; }
     .bg-danger-subtle { background-color: #ffebee !important; color: #c62828 !important; }
     .bg-warning-subtle { background-color: #fff8e1 !important; color: #f57f17 !important; }
@@ -204,24 +206,48 @@
 <script>
     let currentTabStatus = 'Todos';
 
-    document.addEventListener('DOMContentLoaded', function() {
-        updateStatistics();
+    function sortTableByPriority() {
+        const tbody = document.getElementById('tableBody');
+        if (!tbody) return;
         
-        // Listener para Busca Global
-        document.getElementById('globalSearch').addEventListener('input', applyAllFilters);
-    });
-
-    function applyTabFilter(status, element) {
-        // Atualiza estilo das abas
-        document.querySelectorAll('.btn-filter').forEach(btn => {
-            btn.classList.remove('active');
-            btn.classList.add('text-muted');
+        const rows = Array.from(tbody.querySelectorAll('.item-row'));
+        
+        // Ordenação: Prioridade (1 antes de 0) e depois por Pedido (decrescente)
+        rows.sort((a, b) => {
+            const prioA = parseInt(a.getAttribute('data-prioridade') || 0);
+            const prioB = parseInt(b.getAttribute('data-prioridade') || 0);
+            
+            if (prioB !== prioA) {
+                return prioB - prioA;
+            }
+            
+            // Se a prioridade for igual, mantém a ordem por número do pedido (opcional)
+            const idA = a.querySelector('.fw-bold.text-dark').innerText.replace('#', '');
+            const idB = b.querySelector('.fw-bold.text-dark').innerText.replace('#', '');
+            return idB.localeCompare(idA, undefined, {numeric: true});
         });
-        element.classList.add('active');
-        element.classList.remove('text-muted');
 
-        currentTabStatus = status;
-        applyAllFilters();
+        // Limpa e re-insere
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    function updateStatistics() {
+        const visibleRows = document.querySelectorAll('.item-row:not([style*="display: none"])');
+        let totalVal = 0;
+
+        visibleRows.forEach(row => {
+            const valStr = row.querySelector('.raw-value').textContent;
+            totalVal += parseFloat(valStr) || 0;
+        });
+
+        const countEl = document.getElementById('count-total');
+        const valEl = document.getElementById('visible-value');
+        
+        if(countEl) countEl.textContent = visibleRows.length;
+        if(valEl) valEl.textContent = totalVal.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        });
     }
 
     function applyAllFilters() {
@@ -238,31 +264,30 @@
             const matchesColecao = selectedColecao === "" || rowColecao === selectedColecao;
             const matchesTab = currentTabStatus === 'Todos' || rowStatus === currentTabStatus.toLowerCase();
 
-            if (matchesSearch && matchesColecao && matchesTab) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+            row.style.display = (matchesSearch && matchesColecao && matchesTab) ? '' : 'none';
         });
 
         updateStatistics();
     }
 
-    function updateStatistics() {
-        const visibleRows = document.querySelectorAll('.item-row:not([style*="display: none"])');
-        let totalVal = 0;
-
-        visibleRows.forEach(row => {
-            const valStr = row.querySelector('.raw-value').textContent;
-            totalVal += parseFloat(valStr) || 0;
+    function applyTabFilter(status, element) {
+        document.querySelectorAll('.btn-filter').forEach(btn => {
+            btn.classList.remove('active');
+            btn.classList.add('text-muted');
         });
+        element.classList.add('active');
+        element.classList.remove('text-muted');
 
-        document.getElementById('count-total').textContent = visibleRows.length;
-        document.getElementById('visible-value').textContent = totalVal.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        });
+        currentTabStatus = status;
+        applyAllFilters();
     }
+
+    // Inicialização
+    window.onload = function() {
+        sortTableByPriority();
+        updateStatistics();
+        document.getElementById('globalSearch').addEventListener('input', applyAllFilters);
+    };
 
     function exportTableToCSV(filename) {
         const rows = document.querySelectorAll("#mainTable tr:not([style*='display: none'])");
