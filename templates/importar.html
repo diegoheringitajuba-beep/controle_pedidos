@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}Importar Planilha | Hering Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            
+            <!-- Alertas de Feedback -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show shadow-sm mb-4 border-0" role="alert">
+                            <i class="fas {{ 'fa-exclamation-circle' if category == 'error' else 'fa-check-circle' }} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="card shadow border-0 overflow-hidden">
+                <div class="card-header bg-primary py-3">
+                    <h5 class="mb-0 text-white fw-bold">
+                        <i class="fas fa-upload me-2"></i>Sincronização de Dados
+                    </h5>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    
+                    <form action="{{ url_for('importar') }}" method="POST" enctype="multipart/form-data" id="formImport">
+                        
+                        <!-- Campo de Período -->
+                        <div class="mb-4">
+                            <label for="periodo" class="form-label fw-bold text-dark">Período de Referência</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="far fa-calendar-alt text-muted"></i></span>
+                                <input type="text" name="periodo" id="periodo" class="form-control border-start-0" 
+                                       placeholder="Ex: 0226" list="periodosSugeridos" required>
+                                <datalist id="periodosSugeridos">
+                                    {% for p in periodos %}
+                                    <option value="{{ p }}">
+                                    {% endfor %}
+                                </datalist>
+                            </div>
+                            <small class="text-muted mt-1 d-block">Identificador da coleção ou mês (Ex: 1225).</small>
+                        </div>
+
+                        <!-- Área de Upload -->
+                        <div class="mb-5">
+                            <label class="form-label fw-bold text-dark">Arquivo da Planilha (Excel)</label>
+                            <div class="drop-zone border border-2 border-dashed rounded-3 p-5 text-center bg-light transition-all" id="dropZone">
+                                <input type="file" name="file" id="fileInput" class="d-none" accept=".xlsx, .xls, .csv" required>
+                                
+                                <div id="promptState">
+                                    <i class="fas fa-file-excel fa-4xl text-primary opacity-25 mb-3"></i>
+                                    <p class="mb-2 fw-medium">Arraste a planilha Hering aqui</p>
+                                    <button type="button" class="btn btn-outline-primary btn-sm px-4" 
+                                            onclick="document.getElementById('fileInput').click()">ou procure no computador</button>
+                                </div>
+
+                                <div id="selectedState" class="d-none text-success">
+                                    <i class="fas fa-check-circle fa-3x mb-2"></i>
+                                    <h6 id="fileName" class="fw-bold mb-1">arquivo_selecionado.xlsx</h6>
+                                    <button type="button" class="btn btn-link text-danger btn-sm p-0" onclick="clearFile()">Trocar arquivo</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botão de Ação -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary py-3 fw-bold shadow-sm" id="btnSubmit">
+                                <i class="fas fa-sync-alt me-2"></i>PROCESSAR E ATUALIZAR STATUS
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Overlay de Carregamento -->
+                    <div id="loadingOverlay" class="d-none text-center py-4">
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+                        <h5 class="fw-bold text-primary">Lendo planilha...</h5>
+                        <p class="text-muted small">Cruzando dados e detectando alterações de status.</p>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Instruções -->
+            <div class="mt-4 p-3 bg-light rounded-3 border">
+                <h6 class="fw-bold text-secondary small text-uppercase mb-2"><i class="fas fa-info-circle me-1"></i>Importante</h6>
+                <ul class="small text-muted mb-0 ps-3">
+                    <li>O sistema pula automaticamente as primeiras 7 linhas de cabeçalho.</li>
+                    <li>Pedidos novos serão inseridos; pedidos existentes terão o <strong>Status</strong> e <strong>NF</strong> atualizados.</li>
+                    <li>Todas as mudanças de status serão registradas no histórico de auditoria.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .drop-zone { cursor: pointer; border-color: #dee2e6 !important; }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: #0d6efd !important; background-color: #f0f7ff !important; }
+    .transition-all { transition: all 0.3s ease; }
+    .fa-4xl { font-size: 3.5rem; }
+</style>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const promptState = document.getElementById('promptState');
+    const selectedState = document.getElementById('selectedState');
+    const fileNameText = document.getElementById('fileName');
+    const form = document.getElementById('formImport');
+    const loading = document.getElementById('loadingOverlay');
+
+    // Trigger de Seleção
+    fileInput.addEventListener('change', function() {
+        if (this.files.length) updateFileDisplay(this.files[0].name);
+    });
+
+    // Drag & Drop
+    ['dragenter', 'dragover'].forEach(name => {
+        dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    });
+    ['dragleave', 'drop'].forEach(name => {
+        dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); });
+    });
+    dropZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length) {
+            fileInput.files = files;
+            updateFileDisplay(files[0].name);
+        }
+    });
+
+    function updateFileDisplay(name) {
+        fileNameText.innerText = name;
+        promptState.classList.add('d-none');
+        selectedState.classList.remove('d-none');
+    }
+
+    function clearFile() {
+        fileInput.value = '';
+        promptState.classList.remove('d-none');
+        selectedState.classList.add('d-none');
+    }
+
+    // Gerenciar Submissão
+    form.addEventListener('submit', function() {
+        form.classList.add('d-none');
+        loading.classList.remove('d-none');
+    });
+</script>
+{% endblock %}

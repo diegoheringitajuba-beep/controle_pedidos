@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Hering Admin | Gestão de Franquias{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --sidebar-bg: #1e293b;
+            --sidebar-hover: #334155;
+            --sidebar-active: #3b82f6;
+            --accent-color: #3b82f6;
+            --primary-hering: #002d72;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            overflow-x: hidden;
+        }
+        
+        /* Layout Structure */
+        #wrapper {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar Styles */
+        #sidebar-wrapper {
+            width: 280px;
+            background: var(--sidebar-bg);
+            color: white;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            z-index: 1000;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar-heading {
+            padding: 1.5rem 1.25rem;
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: #0f172a;
+            display: flex;
+            align-items: center;
+        }
+        
+        .sidebar-section-title {
+            padding: 1.5rem 1.25rem 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #64748b;
+            letter-spacing: 0.1em;
+        }
+        
+        .list-group-item {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            padding: 0.85rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            border-radius: 0;
+            margin: 0.2rem 0;
+        }
+        
+        .list-group-item i {
+            width: 20px;
+            margin-right: 12px;
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+        }
+        
+        .list-group-item:hover {
+            background: var(--sidebar-hover);
+            color: white;
+        }
+        
+        .list-group-item:hover i {
+            transform: translateX(3px);
+        }
+        
+        .list-group-item.active {
+            background: var(--sidebar-active) !important;
+            color: white !important;
+            font-weight: 700;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5);
+        }
+        
+        /* Period Badges */
+        .period-badge {
+            font-size: 0.65rem;
+            background: rgba(255,255,255,0.1);
+            color: #cbd5e1;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+        }
+        
+        /* Content Area */
+        #page-content-wrapper {
+            flex-grow: 1;
+            background-color: #f8fafc;
+            min-width: 0;
+        }
+        
+        .main-navbar {
+            background: white !important;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        /* Alert Styling */
+        .alert {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            font-weight: 500;
+        }
+        
+        /* Scrollbar */
+        #sidebar-wrapper::-webkit-scrollbar {
+            width: 5px;
+        }
+        #sidebar-wrapper::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+
+        .x-small {
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+<div id="wrapper">
+    <!-- Sidebar -->
+    <div id="sidebar-wrapper" class="d-flex flex-column">
+        <div class="sidebar-heading">
+            <div class="bg-primary rounded-3 p-2 me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                <i class="fas fa-store text-white m-0" style="font-size: 1rem;"></i>
+            </div>
+            <span>HERING ADMIN</span>
+        </div>
+        
+        <div class="list-group list-group-flush flex-grow-1 overflow-auto">
+            <div class="sidebar-section-title">Menu Principal</div>
+            
+            <a href="{{ url_for('index') }}" class="list-group-item list-group-item-action {% if request.endpoint == 'index' %}active{% endif %}">
+                <i class="fas fa-chart-pie"></i> Dashboard
+            </a>
+            
+            <a href="{{ url_for('importar') }}" class="list-group-item list-group-item-action {% if request.endpoint == 'importar' %}active{% endif %}">
+                <i class="fas fa-cloud-upload-alt text-info"></i> Importar Dados
+            </a>
+
+            <a href="{{ url_for('lista_importacoes') }}" class="list-group-item list-group-item-action {% if request.endpoint in ['lista_importacoes', 'detalhe_importacao'] %}active{% endif %}">
+                <i class="fas fa-history text-light"></i> Histórico de Lotes
+            </a>
+
+            <a href="{{ url_for('historico_pedidos') }}" class="list-group-item list-group-item-action {% if request.endpoint == 'historico_pedidos' %}active{% endif %}">
+                <i class="fas fa-database text-warning"></i> Histórico Geral
+            </a>
+            
+            <div class="sidebar-section-title">Relatórios & Logs</div>
+
+            <a href="{{ url_for('visualizar_alterados') }}" class="list-group-item list-group-item-action {% if request.endpoint == 'visualizar_alterados' %}active{% endif %}">
+                <i class="fas fa-sync-alt text-danger"></i> Logs 24h
+            </a>
+
+            <div class="sidebar-section-title">Períodos de Referência</div>
+            
+            {% if periodos is defined and periodos %}
+
+                {% for p in periodos %}
+                <a href="{{ url_for('visualizar_periodo', ref=p) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if referencia == p %}active{% endif %}">
+                    <span><i class="far fa-calendar-alt opacity-50"></i>{{ p }}</span>
+                    <span class="period-badge">Ver</span>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="px-4 py-2 small text-muted fst-italic">Nenhum período processado</div>
+            {% endif %}
+        </div>
+        
+        <div class="p-3 bg-dark bg-opacity-25 mt-auto border-top border-white border-opacity-5">
+            <div class="d-flex align-items-center">
+                <div class="flex-shrink-0">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=3b82f6&color=fff" class="rounded-circle border border-2 border-white border-opacity-25" width="32" alt="User">
+                </div>
+                <div class="flex-grow-1 ms-2 overflow-hidden">
+                    <p class="mb-0 text-white small fw-bold text-truncate">Administrador</p>
+                    <p class="mb-0 text-white-50 x-small" style="font-size: 0.65rem;">Unidade de Operações</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /#sidebar-wrapper -->
+
+    <!-- Page Content -->
+    <div id="page-content-wrapper" class="d-flex flex-column">
+        <!-- Top Navbar -->
+        <nav class="navbar navbar-expand-lg main-navbar shadow-sm sticky-top">
+            <div class="container-fluid">
+                <span class="navbar-brand mb-0 h1 fw-bold text-dark d-flex align-items-center">
+                    <i class="fas fa-bars text-muted me-3 d-md-none" id="menu-toggle"></i>
+                    Sistema de Gestão de Pedidos
+                </span>
+                <div class="ms-auto d-flex align-items-center">
+                    <div class="text-end me-3 d-none d-sm-block">
+                        <p class="mb-0 fw-bold small">Hering Database</p>
+                        <p class="mb-0 text-muted x-small">v2.5 Stable</p>
+                    </div>
+                    <div class="vr mx-3 d-none d-sm-block"></div>
+                    <button class="btn btn-sm btn-light rounded-circle shadow-sm position-relative">
+                        <i class="fas fa-bell text-muted"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Fluid Content -->
+        <div class="container-fluid p-4">
+            <!-- Flask Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show border-start border-4 border-{{ 'success' if category == 'success' else 'danger' }}" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'fa-exclamation-circle' }} me-3 fa-lg"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <!-- Dynamic Content Block -->
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    <!-- /#page-content-wrapper -->
+</div>
+
+<!-- Bootstrap Bundle com Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Scripts Adicionais -->
+<script>
+    // Inicialização de Tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    // Toggle Sidebar para mobile
+    document.getElementById("menu-toggle")?.addEventListener("click", function() {
+        const sidebar = document.getElementById("sidebar-wrapper");
+        if (sidebar.style.marginLeft === "-280px") {
+            sidebar.style.marginLeft = "0";
+        } else {
+            sidebar.style.marginLeft = "-280px";
+        }
+    });
+</script>
+
+</body>
+</html>

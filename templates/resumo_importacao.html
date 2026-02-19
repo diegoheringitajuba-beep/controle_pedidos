@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container-fluid px-4">
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+<h1 class="h3 mb-0 text-gray-800">Resultado da Importação</h1>
+<span class="badge bg-primary p-2 shadow-sm">
+<i class="fas fa-clock me-1"></i> Processado em: {{ timestamp.strftime('%d/%m/%Y %H:%M:%S') }}
+</span>
+</div>
+
+<!-- Cartões de Indicadores -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Processado</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_itens }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-layer-group fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Status Alterados</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ mudancas_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exchange-alt fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SEÇÃO DE DESTAQUE: ITENS ALTERADOS -->
+{% set itens_alterados = [] %}
+{% for status, dados in resumo.items() %}
+    {% for item in dados.itens %}
+        {% if item.status_anterior %}
+            {% do itens_alterados.append(item) %}
+        {% endif %}
+    {% endfor %}
+{% endfor %}
+
+{% if itens_alterados|length > 0 %}
+<div class="card shadow mb-4 border-bottom-success">
+    <div class="card-header py-3 bg-success text-white d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold"><i class="fas fa-exclamation-circle me-2"></i>ALTERAÇÕES DE STATUS DETECTADAS</h6>
+        <span class="badge bg-white text-success">{{ itens_alterados|length }} itens mudaram</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Pedido</th>
+                        <th>Produto</th>
+                        <th class="text-center">Status Anterior</th>
+                        <th class="text-center">Status Novo</th>
+                        <th class="text-end pe-4">Valor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in itens_alterados %}
+                    <tr class="table-success-light">
+                        <td class="ps-4 fw-bold text-dark">{{ item.pedido }}</td>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <span class="small fw-bold text-dark">{{ item.artigo }}</span>
+                                <span class="x-small text-muted">{{ item.item_desc }} - Tam: {{ item.tamanho }}</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-secondary opacity-75 text-decoration-line-through">
+                                {{ item.status_anterior }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <div class="d-inline-flex align-items-center">
+                                <i class="fas fa-arrow-right mx-2 text-success"></i>
+                                <span class="badge bg-success shadow-sm px-3">
+                                    {{ item.status }}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="text-end pe-4 fw-bold">
+                            R$ {{ "{:,.2f}".format(item.valor_liquido or 0).replace(',', 'v').replace('.', ',').replace('v', '.') }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Listagem por Grupos (Apenas itens que NÃO mudaram ou visão geral) -->
+<h5 class="h5 mb-3 text-gray-600 mt-5"><i class="fas fa-list me-2"></i>Visão Geral por Status</h5>
+<div class="accordion shadow-sm" id="accordionResumo">
+    {% for status, dados in resumo.items() %}
+    <div class="accordion-item border-0 mb-2">
+        <h2 class="accordion-header" id="heading{{ loop.index }}">
+            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}">
+                <div class="d-flex justify-content-between w-100 align-items-center me-3">
+                    <span>
+                        <i class="fas fa-folder me-2 text-primary opacity-50"></i>
+                        {{ status }} 
+                        <span class="badge bg-light text-dark border ms-2">{{ dados.count }}</span>
+                    </span>
+                    <span class="text-dark">R$ {{ "{:,.2f}".format(dados.valor).replace(',', 'v').replace('.', ',').replace('v', '.') }}</span>
+                </div>
+            </button>
+        </h2>
+        <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#accordionResumo">
+            <div class="accordion-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Pedido</th>
+                                <th>Produto</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-end pe-4">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in dados.itens %}
+                            {% if not item.status_anterior %}
+                            <tr>
+                                <td class="ps-4 fw-bold">{{ item.pedido }}</td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span class="small fw-bold">{{ item.artigo }}</span>
+                                        <span class="x-small text-muted">{{ item.item_desc }} - Tam: {{ item.tamanho }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark border px-3">
+                                        {{ item.status }}
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    R$ {{ "{:,.2f}".format(item.valor_liquido or 0).replace(',', 'v').replace('.', ',').replace('v', '.') }}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="mt-4 mb-5 pb-5 text-center">
+    <a href="{{ url_for('index') }}" class="btn btn-outline-primary px-5 shadow-sm">
+        <i class="fas fa-check-circle me-2"></i>Concluir e Ir para Dashboard
+    </a>
+</div>
+
+
+</div>
+
+<style>
+.x-small { font-size: 0.75rem; }
+.table-success-light { background-color: rgba(25, 135, 84, 0.04); }
+.accordion-button:not(.collapsed) { background-color: #f8f9fc; color: #4e73df; }
+.accordion-item { border-radius: 8px !important; overflow: hidden; border: 1px solid #e3e6f0 !important; }
+.border-left-primary { border-left: 0.25rem solid #4e73df !important; }
+.border-left-success { border-left: 0.25rem solid #1cc88a !important; }
+.border-bottom-success { border-bottom: 3px solid #1cc88a !important; }
+.table th { font-size: 0.7rem; text-transform: uppercase; color: #858796; padding: 12px; }
+.badge { font-weight: 600; }
+</style>
+
+{% endblock %}

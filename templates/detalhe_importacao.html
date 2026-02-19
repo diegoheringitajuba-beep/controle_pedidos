@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Cabeçalho com Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-transparent p-0">
+            <li class="breadcrumb-item"><a href="{{ url_for('lista_importacoes') }}">Importações</a></li>
+            <li class="breadcrumb-item active">Lote #{{ lote.id }}</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h4 mb-1 text-gray-800">Detalhes da Importação</h2>
+            <p class="text-muted small mb-0">
+                Processado em 
+                {% if lote.data_importacao %}
+                    {{ lote.data_importacao.strftime('%d/%m/%Y às %H:%M') }}
+                {% else %}
+                    Data não disponível
+                {% endif %}
+            </p>
+        </div>
+        <div class="text-right">
+            <div class="badge badge-primary p-2 shadow-sm">Período: {{ lote.periodo_referencia }}</div>
+        </div>
+    </div>
+
+    <!-- Resumo do Lote -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Lido</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ lote.total_itens }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-excel fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Status Alterados</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ mudancas|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exchange-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Mudanças -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Relatório de Mudanças Detectadas</h6>
+            <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered" width="100%" cellspacing="0">
+                    <thead class="thead-light text-uppercase small font-weight-bold">
+                        <tr>
+                            <th>Pedido</th>
+                            <th>Artigo / Descrição</th>
+                            <th>Status Anterior</th>
+                            <th class="text-center" style="width: 50px;">→</th>
+                            <th>Novo Status</th>
+                            <th>Horário</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in mudancas %}
+                        <tr>
+                            <td class="font-weight-bold text-primary align-middle">{{ m.pedido }}</td>
+                            <td class="align-middle">
+                                <span class="d-block font-weight-bold text-dark text-truncate" style="max-width: 250px;" title="{{ m.item_desc }}">
+                                    {{ m.item_desc or '---' }}
+                                </span>
+                                <small class="text-muted font-family-monospace">SKU: {{ m.codigo_barras }}</small>
+                            </td>
+                            <td class="align-middle">
+                                {% if m.status_anterior and m.status_anterior.strip() != "" %}
+                                    {% set s_ant = m.status_anterior|upper %}
+                                    <span class="badge border px-2 py-1 shadow-sm 
+                                        {% if 'ENTREG' in s_ant %}bg-light text-success border-success
+                                        {% elif 'CANC' in s_ant %}bg-light text-danger border-danger
+                                        {% elif 'PEND' in s_ant %}bg-light text-warning border-warning
+                                        {% else %}bg-light text-secondary border-secondary{% endif %}" 
+                                        style="font-size: 0.75rem; border-width: 1.5px !important;">
+                                        {{ m.status_anterior }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted small italic">---</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center align-middle">
+                                <i class="fas fa-chevron-right text-light"></i>
+                            </td>
+                            <td class="align-middle">
+                                {% set n_status = m.status_novo|upper %}
+                                <span class="badge px-3 py-1 shadow-sm text-white
+                                    {% if 'ENTREG' in n_status %}bg-success
+                                    {% elif 'CANC' in n_status %}bg-danger
+                                    {% elif 'PEND' in n_status %}bg-warning
+                                    {% else %}bg-primary{% endif %}"
+                                    style="font-size: 0.75rem; min-width: 80px;">
+                                    {{ m.status_novo }}
+                                </span>
+                            </td>
+                            <td class="align-middle text-muted small font-weight-bold">
+                                {{ m.data_mudanca.strftime('%H:%M:%S') if m.data_mudanca else '--:--' }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        {% if not mudancas %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="mb-2"><i class="fas fa-info-circle fa-2x text-gray-200"></i></div>
+                                <span class="text-muted">Nenhuma mudança de status detectada para este lote.</span>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Ajustes finos para simular o estilo da imagem */
+    .table thead th {
+        border-top: none;
+        color: #5a5c69;
+        letter-spacing: 0.05em;
+    }
+    .badge {
+        border-radius: 4px;
+        text-transform: capitalize;
+    }
+    .bg-warning {
+        background-color: #f6c23e !important;
+    }
+    .bg-success {
+        background-color: #1cc88a !important;
+    }
+    .text-success { color: #1cc88a !important; border-color: #1cc88a !important; }
+    .text-danger { color: #e74a3b !important; border-color: #e74a3b !important; }
+    .text-warning { color: #f6c23e !important; border-color: #f6c23e !important; }
+</style>
+{% endblock %}

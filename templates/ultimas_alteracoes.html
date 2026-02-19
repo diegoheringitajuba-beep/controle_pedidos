@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-history me-2 text-primary"></i>Últimas Alterações
+            </h1>
+            <p class="text-muted small mb-0">Itens atualizados no banco de dados nas últimas 24 horas.</p>
+        </div>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i> Voltar ao Dashboard
+        </a>
+    </div>
+
+    {% if itens %}
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Relatório de Mudanças Recentemente Processadas</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tabelaAlteracoes">
+                    <thead class="bg-light text-secondary">
+                        <tr>
+                            <th class="ps-4">Pedido</th>
+                            <th>Item / Artigo</th>
+                            <th>Status Atual</th>
+                            <th>Valor Líquido</th>
+                            <th>Nota Fiscal</th>
+                            <th>Última Sincronização</th>
+                            <th class="pe-4 text-end">Período</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in itens %}
+                        <tr>
+                            <td class="ps-4 font-monospace small"><strong>{{ item.pedido }}</strong></td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span class="fw-bold text-dark">{{ item.item_desc }}</span>
+                                    <span class="text-muted x-small">{{ item.artigo }} - Tam: {{ item.tamanho }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if item.status == 'Faturado' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3">Faturado</span>
+                                {% elif item.status == 'Cancelado' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3">Cancelado</span>
+                                {% else %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3">{{ item.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold">R$ {{ "%.2f"|format(item.valor_liquido or 0) }}</td>
+                            <td class="text-muted">{{ item.nota_fiscal or '---' }}</td>
+                            <td>
+                                <span class="text-primary small">
+                                    <i class="far fa-clock me-1"></i>
+                                    {{ item.ultima_atualizacao.strftime('%d/%m/%Y %H:%M') }}
+                                </span>
+                            </td>
+                            <td class="pe-4 text-end text-secondary small">{{ item.periodo_referencia }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-white text-center py-3">
+            <span class="text-muted small">Total de <strong>{{ itens|length }}</strong> registros alterados detectados.</span>
+        </div>
+    </div>
+    {% else %}
+    <div class="card shadow-sm border-0">
+        <div class="card-body text-center py-5">
+            <div class="mb-3">
+                <i class="fas fa-check-circle fa-4x text-light"></i>
+            </div>
+            <h5 class="text-secondary">Nenhuma alteração recente</h5>
+            <p class="text-muted">Todos os dados estão sincronizados com as versões anteriores das planilhas.</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary px-4 mt-2">Ir para Dashboard</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .x-small { font-size: 0.75rem; }
+    .bg-success-subtle { background-color: #e1f7e9; }
+    .bg-danger-subtle { background-color: #fde8e8; }
+    .bg-primary-subtle { background-color: #e7f0ff; }
+</style>
+{% endblock %}

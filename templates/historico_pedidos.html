@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+
+{% block title %}Histórico Geral | Hering Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho da Página (Bootstrap 5 Grid) -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item text-uppercase small fw-bold"><a href="{{ url_for('index') }}" class="text-decoration-none">Administração</a></li>
+                    <li class="breadcrumb-item active text-uppercase small fw-bold text-primary" aria-current="page">Base de Dados Geral</li>
+                </ol>
+            </nav>
+            <h1 class="h2 fw-bold text-dark mb-1">Histórico de Pedidos</h1>
+            <p class="text-muted small mb-0">Gestão centralizada de todos os itens importados e sincronizados.</p>
+        </div>
+        <div class="col-md-6 d-flex justify-content-md-end align-items-center gap-3 mt-3 mt-md-0">
+            <div class="input-group input-group-sm w-50 shadow-sm">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="globalSearch" class="form-control border-start-0 ps-0" placeholder="Procurar pedido ou artigo...">
+            </div>
+            <button class="btn btn-primary btn-sm px-3 shadow-sm fw-bold border-0">
+                <i class="fas fa-file-export me-1"></i> Exportar CSV
+            </button>
+        </div>
+    </div>
+
+    <!-- Cards de Indicadores (Bootstrap 5 Cards) -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm border-start border-4 border-primary h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1" style="font-size: 0.7rem;">Total de Itens</div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ pedidos|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-boxes fa-2x text-gray-300 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Principal da Tabela (Padrão Admin Bootstrap) -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="card-header bg-white border-bottom py-3">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div class="nav nav-pills" id="pills-tab" role="tablist">
+                    <button class="nav-link active small fw-bold py-1 px-3 me-2" data-bs-toggle="pill" type="button">Todos</button>
+                    <button class="nav-link text-muted small fw-bold py-1 px-3 me-2" data-bs-toggle="pill" type="button">Faturados</button>
+                    <button class="nav-link text-muted small fw-bold py-1 px-3" data-bs-toggle="pill" type="button">Cancelados</button>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm dropdown-toggle text-muted fw-bold" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-filter me-1"></i> Ordenar por
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 small">
+                        <li><a class="dropdown-item active" href="#">Mais Recentes</a></li>
+                        <li><a class="dropdown-item" href="#">Valor (Maior)</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#">Nota Fiscal</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="mainTable">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4 py-3 text-uppercase text-secondary fw-bold" style="font-size: 0.65rem;">Info. Pedido</th>
+                        <th class="py-3 text-uppercase text-secondary fw-bold" style="font-size: 0.65rem;">Descrição do Produto</th>
+                        <th class="py-3 text-uppercase text-secondary fw-bold text-center" style="font-size: 0.65rem;">Status</th>
+                        <th class="py-3 text-uppercase text-secondary fw-bold text-end" style="font-size: 0.65rem;">Valor Líquido</th>
+                        <th class="py-3 text-uppercase text-secondary fw-bold" style="font-size: 0.65rem;">Nota Fiscal</th>
+                        <th class="py-3 text-uppercase text-secondary fw-bold text-center" style="font-size: 0.65rem;">Sincronização</th>
+                    </tr>
+                </thead>
+                <tbody class="border-top-0">
+                    {% for item in pedidos %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark mb-0">#{{ item.pedido }}</div>
+                            <div class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem;">Ref: {{ item.periodo_referencia }}</div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light p-2 rounded-2 text-primary me-3 border">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark small">{{ item.item_desc }}</div>
+                                    <div class="text-muted" style="font-size: 0.7rem;">
+                                        Artigo: <span class="font-monospace text-dark">{{ item.artigo }}</span> • 
+                                        Tam: <span class="fw-bold">{{ item.tamanho }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            {% set badge_class = "bg-secondary text-white" %}
+                            {% if item.status == 'Entregue' or item.status == 'Faturado' %}{% set badge_class = "bg-success-subtle text-success border border-success-subtle" %}
+                            {% elif item.status == 'Cancelado' %}{% set badge_class = "bg-danger-subtle text-danger border border-danger-subtle" %}
+                            {% elif item.status == 'Pendente' %}{% set badge_class = "bg-warning-subtle text-warning border border-warning-subtle" %}{% endif %}
+                            
+                            <span class="badge rounded-pill px-3 py-2 text-uppercase fw-bold {{ badge_class }}" style="font-size: 0.6rem;">
+                                {{ item.status }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <span class="font-monospace fw-bold text-dark small">R$ {{ "{:,.2f}".format(item.valor_liquido or 0) }}</span>
+                        </td>
+                        <td>
+                            <div class="text-muted small">
+                                <i class="far fa-file-alt me-1 opacity-50 text-primary"></i>
+                                {{ item.nota_fiscal or '---' }}
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="small fw-bold text-dark">{{ item.ultima_atualizacao.strftime('%d/%m/%Y') if item.ultima_atualizacao else '--/--/--' }}</div>
+                            <div class="text-muted italic" style="font-size: 0.65rem;">{{ item.ultima_atualizacao.strftime('%H:%M') if item.ultima_atualizacao else '' }}</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card-footer bg-white border-top py-3">
+            <div class="d-flex justify-content-between align-items-center flex-column flex-md-row gap-3">
+                <div class="text-muted small fw-medium">
+                    A mostrar <strong>{{ pedidos|length }}</strong> registos na base de dados
+                </div>
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item disabled">
+                            <a class="page-link shadow-none border-0 bg-light rounded-pill px-3" href="#">Anterior</a>
+                        </li>
+                        <li class="page-item active"><a class="page-link shadow-none border-0 rounded-pill mx-1" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link shadow-none border-0 rounded-pill mx-1" href="#">2</a></li>
+                        <li class="page-item">
+                            <a class="page-link shadow-none border-0 bg-light rounded-pill px-3" href="#">Próximo</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Ajustes específicos para alinhar com o Bootstrap 5 do base.html */
+    .bg-success-subtle { background-color: #d1e7dd !important; color: #0f5132 !important; }
+    .bg-danger-subtle { background-color: #f8d7da !important; color: #842029 !important; }
+    .bg-warning-subtle { background-color: #fff3cd !important; color: #664d03 !important; }
+    
+    .nav-pills .nav-link.active {
+        background-color: #f8f9fa;
+        color: #0d6efd !important;
+        border: 1px solid #dee2e6;
+    }
+
+    #mainTable tbody tr {
+        transition: background-color 0.2s;
+    }
+    
+    #mainTable tbody tr:hover {
+        background-color: #f8f9fc !important;
+    }
+
+    .pagination .page-link {
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+    /* Scrollbar estilizada para Bootstrap */
+    .table-responsive::-webkit-scrollbar {
+        height: 6px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #dee2e6;
+        border-radius: 10px;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Pesquisa Global no Cliente (Bootstrap 5 Context)
+        const searchInput = document.getElementById('globalSearch');
+        const tableBody = document.querySelector('#mainTable tbody');
+        const rows = tableBody.querySelectorAll('tr');
+
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    });
+</script>
+{% endblock %}

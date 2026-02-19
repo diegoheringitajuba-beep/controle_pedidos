@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0 text-gray-800">Histórico de Importações</h2>
+        <a href="{{ url_for('importar') }}" class="btn btn-primary shadow-sm">
+            <i class="fas fa-upload fa-sm text-white-50 mr-2"></i> Nova Importação
+        </a>
+    </div>
+
+    <!-- Tabela de Lotes Processados -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-white">
+            <h6 class="m-0 font-weight-bold text-primary">Lotes Processados</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                        <tr class="text-secondary small font-weight-bold">
+                            <th>Data/Hora</th>
+                            <th>Período</th>
+                            <th>Itens Processados</th>
+                            <th>Status Alterados</th>
+                            <th class="text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lote in lotes %}
+                        <tr>
+                            <td class="align-middle">
+                                <div class="font-weight-bold text-dark">
+                                    {{ lote.data_importacao.strftime('%d/%m/%Y') if lote.data_importacao else '---' }}
+                                </div>
+                                <div class="small text-muted">
+                                    {{ lote.data_importacao.strftime('%H:%M:%S') if lote.data_importacao else '' }}
+                                </div>
+                            </td>
+                            
+                            <!-- Correção da visibilidade do Período -->
+                            <td class="align-middle text-dark font-weight-bold">
+                                {{ lote.periodo_referencia if lote.periodo_referencia else '---' }}
+                            </td>
+
+                            <td class="align-middle text-secondary">
+                                {{ lote.total_itens }} itens
+                            </td>
+
+                            <!-- Correção da visibilidade do Status Alterados -->
+                            <td class="align-middle">
+                                {% if lote.status_alterados_count and lote.status_alterados_count > 0 %}
+                                    <span class="badge badge-warning text-dark px-2 py-1">
+                                        <i class="fas fa-exchange-alt mr-1"></i>
+                                        {{ lote.status_alterados_count }} alterações
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted small">Sem alterações</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="text-center align-middle">
+                                <a href="{{ url_for('detalhe_importacao', lote_id=lote.id) }}" class="btn btn-sm btn-outline-primary px-3">
+                                    Ver Detalhes <i class="fas fa-chevron-right ml-1 small"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        {% if not lotes %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                Nenhuma importação encontrada.
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Forçar cores caso o tema base esteja sobrescrevendo */
+    .table td {
+        color: #4e73df; /* Azul padrão para links ou destaques se necessário */
+    }
+    .text-dark {
+        color: #3a3b45 !important; /* Cinza escuro para visibilidade */
+    }
+    .text-secondary {
+        color: #858796 !important;
+    }
+    /* Estilo para garantir que o badge de warning tenha texto legível */
+    .badge-warning {
+        background-color: #f6c23e;
+        color: #3a3b45 !important;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | Hering Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho Dinâmico -->
+    <div class="row mb-4 align-items-center">
+        <div class="col">
+            <h1 class="h3 fw-bold text-dark mb-1">Painel de Controle</h1>
+            <p class="text-muted small mb-0">Visão geral do inventário e status de sincronização.</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-white shadow-sm border btn-sm fw-bold">
+                <i class="fas fa-download me-2 text-primary"></i>Baixar Relatório
+            </button>
+        </div>
+    </div>
+
+    <!-- Cards de Indicadores Superiores -->
+    <div class="row mb-4">
+        <!-- Total de Itens -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm border-start border-4 border-primary h-100 py-2">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1" style="font-size: 0.7rem;">Total de Itens</div>
+                            <div class="h4 mb-0 fw-bold text-dark">{{ total_itens if total_itens else 0 }}</div>
+                        </div>
+                        <div class="col-auto text-light">
+                            <i class="fas fa-boxes fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Itens Faturados / Entregues -->
+        <!-- Nota: Verifique se no backend a variável é 'faturados_count' ou se deve somar 'Entregue' -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm border-start border-4 border-success h-100 py-2">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1" style="font-size: 0.7rem;">Faturados / Entregues</div>
+                            <div class="h4 mb-0 fw-bold text-dark">{{ faturados_count if faturados_count else 0 }}</div>
+                        </div>
+                        <div class="col-auto text-light">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Itens Cancelados -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm border-start border-4 border-danger h-100 py-2">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1" style="font-size: 0.7rem;">Cancelados</div>
+                            <div class="h4 mb-0 fw-bold text-dark">{{ cancelados_count if cancelados_count else 0 }}</div>
+                        </div>
+                        <div class="col-auto text-light">
+                            <i class="fas fa-times-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Volume Financeiro -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm border-start border-4 border-warning h-100 py-2">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1" style="font-size: 0.7rem;">Volume Financeiro</div>
+                            <div class="h4 mb-0 fw-bold text-dark">R$ {{ "{:,.2f}".format(total_valor if total_valor else 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}</div>
+                        </div>
+                        <div class="col-auto text-light">
+                            <i class="fas fa-dollar-sign fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Listagem de Períodos -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold text-dark">Períodos Ativos no Banco</h6>
+                    <a href="{{ url_for('historico_pedidos') }}" class="btn btn-sm btn-link text-decoration-none p-0">Ver tudo</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light small text-uppercase fw-bold text-muted">
+                                <tr>
+                                    <th>Referência</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if periodos %}
+                                    {% for p in periodos %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-primary bg-opacity-10 p-2 rounded-2 text-primary me-3 border border-primary border-opacity-25">
+                                                    <i class="far fa-calendar-alt"></i>
+                                                </div>
+                                                <span class="fw-bold text-dark">{{ p }}</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Sincronizado</span></td>
+                                        <td class="text-end">
+                                            <a href="{{ url_for('visualizar_periodo', ref=p) }}" class="btn btn-sm btn-outline-primary border-0 fw-bold">
+                                                Detalhes <i class="fas fa-chevron-right ms-1"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center py-4 text-muted small italic">Nenhum dado importado ainda ou erro na conexão.</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coluna Lateral: Ações Rápidas -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4 bg-primary text-white">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Nova Importação</h5>
+                    <p class="small opacity-75 mb-4">Atualize os status dos pedidos carregando uma nova planilha Excel da Hering.</p>
+                    <a href="{{ url_for('importar') }}" class="btn btn-light w-100 fw-bold text-primary shadow-sm py-2">
+                        <i class="fas fa-file-upload me-2"></i>Iniciar Importação
+                    </a>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="fw-bold text-dark mb-3">Logs Recentes</h6>
+                    <div class="d-flex mb-3">
+                        <div class="flex-shrink-0 text-danger"><i class="fas fa-circle x-small mt-1"></i></div>
+                        <div class="ms-3">
+                            <p class="mb-0 small fw-bold">Alterações Detectadas</p>
+                            <a href="{{ url_for('visualizar_alterados') }}" class="small text-muted text-decoration-none">Ver logs das últimas 24h</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-success-subtle { background-color: #d1e7dd !important; color: #0f5132 !important; }
+    .btn-white { background: #fff; color: #475569; }
+    .x-small { font-size: 0.6rem; }
+    .text-light { color: #e2e8f0 !important; }
+</style>
+{% endblock %}
