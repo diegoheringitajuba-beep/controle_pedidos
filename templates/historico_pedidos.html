@@ -3,213 +3,286 @@
 {% block title %}Histórico Geral | Hering Admin{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Cabeçalho da Página (Bootstrap 5 Grid) -->
-    <div class="row mb-4 align-items-center">
+<div class="container-fluid px-4">
+    <!-- Cabeçalho Dinâmico -->
+    <div class="row mb-4 align-items-end">
         <div class="col-md-6">
             <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-1">
-                    <li class="breadcrumb-item text-uppercase small fw-bold"><a href="{{ url_for('index') }}" class="text-decoration-none">Administração</a></li>
-                    <li class="breadcrumb-item active text-uppercase small fw-bold text-primary" aria-current="page">Base de Dados Geral</li>
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item small fw-bold text-uppercase"><a href="{{ url_for('index') }}" class="text-decoration-none text-muted">Dashboard</a></li>
+                    <li class="breadcrumb-item active small fw-bold text-uppercase text-primary" aria-current="page">Base de Dados Geral</li>
                 </ol>
             </nav>
-            <h1 class="h2 fw-bold text-dark mb-1">Histórico de Pedidos</h1>
-            <p class="text-muted small mb-0">Gestão centralizada de todos os itens importados e sincronizados.</p>
+            <h1 class="h3 fw-bold text-dark mb-1">Rastreabilidade de Pedidos</h1>
+            <p class="text-muted small mb-0">Visualização detalhada integrando histórico de mudanças e dados de coleção.</p>
         </div>
-        <div class="col-md-6 d-flex justify-content-md-end align-items-center gap-3 mt-3 mt-md-0">
-            <div class="input-group input-group-sm w-50 shadow-sm">
-                <span class="input-group-text bg-white border-end-0 text-muted">
-                    <i class="fas fa-search"></i>
-                </span>
-                <input type="text" id="globalSearch" class="form-control border-start-0 ps-0" placeholder="Procurar pedido ou artigo...">
+        <div class="col-md-6 d-flex justify-content-md-end gap-2 mt-3 mt-md-0">
+            <div class="search-box position-relative w-50 shadow-sm">
+                <i class="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                <input type="text" id="globalSearch" class="form-control form-control-sm ps-5 border-0 bg-white" placeholder="Filtrar por Pedido, Artigo ou EAN...">
             </div>
-            <button class="btn btn-primary btn-sm px-3 shadow-sm fw-bold border-0">
-                <i class="fas fa-file-export me-1"></i> Exportar CSV
+            <button class="btn btn-white btn-sm shadow-sm border fw-bold text-primary px-3" onclick="exportTableToCSV('historico_hering.csv')">
+                <i class="fas fa-download me-2"></i>Exportar
             </button>
         </div>
     </div>
 
-    <!-- Cards de Indicadores (Bootstrap 5 Cards) -->
+    <!-- Indicadores de Performance (KPIs) -->
     <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-0 shadow-sm border-start border-4 border-primary h-100 py-2">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm bg-primary text-white h-100">
                 <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col me-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1" style="font-size: 0.7rem;">Total de Itens</div>
-                            <div class="h5 mb-0 fw-bold text-gray-800">{{ pedidos|length }}</div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-white-50 small fw-bold text-uppercase mb-1">Total Exibido</div>
+                            <div class="h4 mb-0 fw-bold" id="count-total">{{ pedidos|length }}</div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-boxes fa-2x text-gray-300 opacity-50"></i>
+                        <i class="fas fa-boxes-stacked fa-2x opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm bg-white border-start border-4 border-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small fw-bold text-uppercase mb-1">Valor Líquido Visível</div>
+                            <div class="h4 mb-0 fw-bold text-dark" id="visible-value">R$ 0,00</div>
                         </div>
+                        <div class="text-success"><i class="fas fa-coins fa-2x opacity-50"></i></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Card Principal da Tabela (Padrão Admin Bootstrap) -->
-    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+    <!-- Tabela de Dados Geral -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="card-header bg-white border-bottom py-3">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                <div class="nav nav-pills" id="pills-tab" role="tablist">
-                    <button class="nav-link active small fw-bold py-1 px-3 me-2" data-bs-toggle="pill" type="button">Todos</button>
-                    <button class="nav-link text-muted small fw-bold py-1 px-3 me-2" data-bs-toggle="pill" type="button">Faturados</button>
-                    <button class="nav-link text-muted small fw-bold py-1 px-3" data-bs-toggle="pill" type="button">Cancelados</button>
+                <!-- Abas de Status -->
+                <div class="nav nav-pills gap-1" id="pills-tab">
+                    <button class="nav-link active btn-filter" onclick="applyTabFilter('Todos', this)">Todos</button>
+                    <button class="nav-link text-muted btn-filter" onclick="applyTabFilter('Faturado', this)">Faturados</button>
+                    <button class="nav-link text-muted btn-filter" onclick="applyTabFilter('Pendente', this)">Pendentes</button>
+                    <button class="nav-link text-muted btn-filter" onclick="applyTabFilter('Cancelado', this)">Cancelados</button>
                 </div>
-                <div class="dropdown">
-                    <button class="btn btn-light btn-sm dropdown-toggle text-muted fw-bold" type="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-filter me-1"></i> Ordenar por
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 small">
-                        <li><a class="dropdown-item active" href="#">Mais Recentes</a></li>
-                        <li><a class="dropdown-item" href="#">Valor (Maior)</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#">Nota Fiscal</a></li>
-                    </ul>
+
+                <!-- Filtro de Coleção -->
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small fw-bold text-muted">Coleção:</span>
+                    <select id="filterColecao" class="form-select form-select-sm border-0 bg-light shadow-none" style="min-width: 160px;" onchange="applyAllFilters()">
+                        <option value="">Todas</option>
+                        {% set colecoes = [] %}
+                        {% for p in pedidos %}
+                            {% if p.colecao and p.colecao not in colecoes %}
+                                {% do colecoes.append(p.colecao) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for c in colecoes|sort %}
+                            <option value="{{ c }}">{{ c }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
         </div>
-        
+
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="mainTable">
-                <thead class="table-light">
+                <thead class="bg-light text-secondary">
                     <tr>
-                        <th class="ps-4 py-3 text-uppercase text-secondary fw-bold" style="font-size: 0.65rem;">Info. Pedido</th>
-                        <th class="py-3 text-uppercase text-secondary fw-bold" style="font-size: 0.65rem;">Descrição do Produto</th>
-                        <th class="py-3 text-uppercase text-secondary fw-bold text-center" style="font-size: 0.65rem;">Status</th>
-                        <th class="py-3 text-uppercase text-secondary fw-bold text-end" style="font-size: 0.65rem;">Valor Líquido</th>
-                        <th class="py-3 text-uppercase text-secondary fw-bold" style="font-size: 0.65rem;">Nota Fiscal</th>
-                        <th class="py-3 text-uppercase text-secondary fw-bold text-center" style="font-size: 0.65rem;">Sincronização</th>
+                        <th class="ps-4 py-3 border-0" style="font-size: 0.65rem; width: 15%;">PEDIDO / COLEÇÃO</th>
+                        <th class="py-3 border-0" style="font-size: 0.65rem; width: 25%;">DESCRIÇÃO DO ITEM</th>
+                        <th class="py-3 border-0 text-center" style="font-size: 0.65rem; width: 18%;">FLUXO DE STATUS</th>
+                        <th class="py-3 border-0 text-end" style="font-size: 0.65rem; width: 12%;">FINANCEIRO</th>
+                        <th class="py-3 border-0" style="font-size: 0.65rem; width: 15%;">LOGÍSTICA / NF</th>
+                        <th class="py-3 border-0 text-center" style="font-size: 0.65rem; width: 15%;">ÚLTIMA ATU.</th>
                     </tr>
                 </thead>
-                <tbody class="border-top-0">
+                <tbody class="bg-white">
                     {% for item in pedidos %}
-                    <tr>
+                    <tr class="item-row" data-status="{{ item.status|lower }}" data-colecao="{{ item.colecao }}">
                         <td class="ps-4">
-                            <div class="fw-bold text-dark mb-0">#{{ item.pedido }}</div>
-                            <div class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem;">Ref: {{ item.periodo_referencia }}</div>
+                            <div class="fw-bold text-dark">#{{ item.pedido }}</div>
+                            <div class="text-primary small fw-bold" style="font-size: 0.65rem;">
+                                <i class="fas fa-folder-open me-1"></i>{{ item.colecao or 'NÃO INFORMADO' }}
+                            </div>
                         </td>
                         <td>
                             <div class="d-flex align-items-center">
-                                <div class="bg-light p-2 rounded-2 text-primary me-3 border">
-                                    <i class="fas fa-box"></i>
+                                <div class="bg-light p-2 rounded-3 me-3 text-secondary border">
+                                    <i class="fas fa-shirt"></i>
                                 </div>
                                 <div>
-                                    <div class="fw-bold text-dark small">{{ item.item_desc }}</div>
+                                    <div class="fw-bold text-dark small">{{ item.item_desc or 'PRODUTO SEM DESCRIÇÃO' }}</div>
                                     <div class="text-muted" style="font-size: 0.7rem;">
-                                        Artigo: <span class="font-monospace text-dark">{{ item.artigo }}</span> • 
-                                        Tam: <span class="fw-bold">{{ item.tamanho }}</span>
+                                        Art: <span class="text-dark">{{ item.artigo }}</span> • 
+                                        Tam: <span class="fw-bold text-dark">{{ item.tamanho }}</span>
                                     </div>
+                                    <div class="font-monospace text-muted mt-1" style="font-size: 0.65rem;">{{ item.codigo_barras }}</div>
                                 </div>
                             </div>
                         </td>
                         <td class="text-center">
-                            {% set badge_class = "bg-secondary text-white" %}
-                            {% if item.status == 'Entregue' or item.status == 'Faturado' %}{% set badge_class = "bg-success-subtle text-success border border-success-subtle" %}
-                            {% elif item.status == 'Cancelado' %}{% set badge_class = "bg-danger-subtle text-danger border border-danger-subtle" %}
-                            {% elif item.status == 'Pendente' %}{% set badge_class = "bg-warning-subtle text-warning border border-warning-subtle" %}{% endif %}
-                            
-                            <span class="badge rounded-pill px-3 py-2 text-uppercase fw-bold {{ badge_class }}" style="font-size: 0.6rem;">
-                                {{ item.status }}
-                            </span>
-                        </td>
-                        <td class="text-end">
-                            <span class="font-monospace fw-bold text-dark small">R$ {{ "{:,.2f}".format(item.valor_liquido or 0) }}</span>
-                        </td>
-                        <td>
-                            <div class="text-muted small">
-                                <i class="far fa-file-alt me-1 opacity-50 text-primary"></i>
-                                {{ item.nota_fiscal or '---' }}
+                            <div class="d-inline-flex flex-column align-items-center p-2 rounded bg-light border">
+                                <span class="text-muted fw-bold text-uppercase mb-1" style="font-size: 0.55rem; letter-spacing: 0.5px;">De: {{ item.status_anterior }}</span>
+                                <i class="fas fa-arrow-right text-muted mx-2 d-none"></i> <!-- Pode ser usado para layout horizontal -->
+                                {% set s = item.status|lower %}
+                                {% if s in ['entregue', 'faturado'] %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3">{{ item.status }}</span>
+                                {% elif s == 'cancelado' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3">{{ item.status }}</span>
+                                {% elif s == 'pendente' %}
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3">{{ item.status }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary text-white rounded-pill px-3">{{ item.status or 'INDETERMINADO' }}</span>
+                                {% endif %}
                             </div>
                         </td>
+                        <td class="text-end">
+                            <div class="fw-bold text-dark">R$ {{ "{:,.2f}".format(item.valor_liquido or 0) }}</div>
+                            <div class="text-muted small" style="font-size: 0.65rem;">{{ item.pecas }} un x R$ {{ "{:,.2f}".format(item.valor_un or 0) }}</div>
+                            <!-- Helper oculto para cálculo via JS -->
+                            <span class="d-none raw-value">{{ item.valor_liquido or 0 }}</span>
+                        </td>
+                        <td>
+                            <div class="small fw-bold text-dark"><i class="far fa-file-lines me-1 text-primary"></i>{{ item.nota_fiscal or 'PENDENTE' }}</div>
+                            <div class="text-muted" style="font-size: 0.65rem;">Série: {{ item.serie or '-' }}</div>
+                        </td>
                         <td class="text-center">
-                            <div class="small fw-bold text-dark">{{ item.ultima_atualizacao.strftime('%d/%m/%Y') if item.ultima_atualizacao else '--/--/--' }}</div>
-                            <div class="text-muted italic" style="font-size: 0.65rem;">{{ item.ultima_atualizacao.strftime('%H:%M') if item.ultima_atualizacao else '' }}</div>
+                            {% if item.ultima_atualizacao %}
+                                <div class="small fw-bold text-dark">{{ item.ultima_atualizacao.strftime('%d/%m/%Y') }}</div>
+                                <div class="text-muted" style="font-size: 0.65rem;"><i class="far fa-clock me-1"></i>{{ item.ultima_atualizacao.strftime('%H:%M') }}</div>
+                            {% else %}
+                                <span class="text-muted">---</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" width="60" class="opacity-25 mb-3">
+                            <p class="text-muted">Nenhum dado encontrado para os critérios selecionados.</p>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-
-        <div class="card-footer bg-white border-top py-3">
-            <div class="d-flex justify-content-between align-items-center flex-column flex-md-row gap-3">
-                <div class="text-muted small fw-medium">
-                    A mostrar <strong>{{ pedidos|length }}</strong> registos na base de dados
-                </div>
-                <nav aria-label="Page navigation">
-                    <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item disabled">
-                            <a class="page-link shadow-none border-0 bg-light rounded-pill px-3" href="#">Anterior</a>
-                        </li>
-                        <li class="page-item active"><a class="page-link shadow-none border-0 rounded-pill mx-1" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link shadow-none border-0 rounded-pill mx-1" href="#">2</a></li>
-                        <li class="page-item">
-                            <a class="page-link shadow-none border-0 bg-light rounded-pill px-3" href="#">Próximo</a>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
-        </div>
     </div>
 </div>
 
 <style>
-    /* Ajustes específicos para alinhar com o Bootstrap 5 do base.html */
-    .bg-success-subtle { background-color: #d1e7dd !important; color: #0f5132 !important; }
-    .bg-danger-subtle { background-color: #f8d7da !important; color: #842029 !important; }
-    .bg-warning-subtle { background-color: #fff3cd !important; color: #664d03 !important; }
+    /* Estilos Customizados */
+    .bg-success-subtle { background-color: #e8f5e9 !important; color: #2e7d32 !important; }
+    .bg-danger-subtle { background-color: #ffebee !important; color: #c62828 !important; }
+    .bg-warning-subtle { background-color: #fff8e1 !important; color: #f57f17 !important; }
+    
+    .nav-pills .nav-link { 
+        font-size: 0.75rem; 
+        font-weight: 700; 
+        text-transform: uppercase; 
+        padding: 0.5rem 1.25rem;
+        transition: all 0.3s;
+    }
     
     .nav-pills .nav-link.active {
-        background-color: #f8f9fa;
+        background-color: #f1f3f5;
         color: #0d6efd !important;
-        border: 1px solid #dee2e6;
+        box-shadow: inset 0 0 0 1px #dee2e6;
     }
 
-    #mainTable tbody tr {
-        transition: background-color 0.2s;
-    }
+    .item-row:hover { background-color: #f9fbff !important; }
     
-    #mainTable tbody tr:hover {
-        background-color: #f8f9fc !important;
-    }
-
-    .pagination .page-link {
-        color: #6c757d;
-        font-weight: 600;
-    }
-
-    .pagination .page-item.active .page-link {
-        background-color: #0d6efd;
-        color: white;
-    }
-
-    /* Scrollbar estilizada para Bootstrap */
-    .table-responsive::-webkit-scrollbar {
-        height: 6px;
-    }
-    .table-responsive::-webkit-scrollbar-thumb {
-        background: #dee2e6;
-        border-radius: 10px;
+    .search-box input:focus {
+        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
+        background-color: #f8f9fa !important;
     }
 </style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Pesquisa Global no Cliente (Bootstrap 5 Context)
-        const searchInput = document.getElementById('globalSearch');
-        const tableBody = document.querySelector('#mainTable tbody');
-        const rows = tableBody.querySelectorAll('tr');
+    let currentTabStatus = 'Todos';
 
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchTerm) ? '' : 'none';
-            });
-        });
+    document.addEventListener('DOMContentLoaded', function() {
+        updateStatistics();
+        
+        // Listener para Busca Global
+        document.getElementById('globalSearch').addEventListener('input', applyAllFilters);
     });
+
+    function applyTabFilter(status, element) {
+        // Atualiza estilo das abas
+        document.querySelectorAll('.btn-filter').forEach(btn => {
+            btn.classList.remove('active');
+            btn.classList.add('text-muted');
+        });
+        element.classList.add('active');
+        element.classList.remove('text-muted');
+
+        currentTabStatus = status;
+        applyAllFilters();
+    }
+
+    function applyAllFilters() {
+        const searchTerm = document.getElementById('globalSearch').value.toLowerCase();
+        const selectedColecao = document.getElementById('filterColecao').value;
+        const rows = document.querySelectorAll('.item-row');
+
+        rows.forEach(row => {
+            const rowText = row.textContent.toLowerCase();
+            const rowStatus = row.getAttribute('data-status');
+            const rowColecao = row.getAttribute('data-colecao');
+
+            const matchesSearch = rowText.includes(searchTerm);
+            const matchesColecao = selectedColecao === "" || rowColecao === selectedColecao;
+            const matchesTab = currentTabStatus === 'Todos' || rowStatus === currentTabStatus.toLowerCase();
+
+            if (matchesSearch && matchesColecao && matchesTab) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        updateStatistics();
+    }
+
+    function updateStatistics() {
+        const visibleRows = document.querySelectorAll('.item-row:not([style*="display: none"])');
+        let totalVal = 0;
+
+        visibleRows.forEach(row => {
+            const valStr = row.querySelector('.raw-value').textContent;
+            totalVal += parseFloat(valStr) || 0;
+        });
+
+        document.getElementById('count-total').textContent = visibleRows.length;
+        document.getElementById('visible-value').textContent = totalVal.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        });
+    }
+
+    function exportTableToCSV(filename) {
+        const rows = document.querySelectorAll("#mainTable tr:not([style*='display: none'])");
+        let csv = [];
+        for (let i = 0; i < rows.length; i++) {
+            let row = [], cols = rows[i].querySelectorAll("td, th");
+            for (let j = 0; j < cols.length; j++) {
+                let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " ").replace(/(\s\s)/gm, " ");
+                data = data.replace(/"/g, '""');
+                row.push('"' + data + '"');
+            }
+            csv.push(row.join(","));
+        }
+        const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
+        const downloadLink = document.createElement("a");
+        downloadLink.download = filename;
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+    }
 </script>
 {% endblock %}
