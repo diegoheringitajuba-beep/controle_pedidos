@@ -201,6 +201,10 @@
             {% else %}
                 <div class="px-4 py-2 small text-muted fst-italic">Nenhum período processado</div>
             {% endif %}
+            
+            <a href="#" class="list-group-item list-group-item-action text-danger" onclick="confirmReset(event)">
+                <i class="fas fa-exclamation-triangle"></i> Resetar Banco de Dados
+            </a>
         </div>
         
         <div class="p-3 bg-dark bg-opacity-25 mt-auto border-top border-white border-opacity-5">
@@ -283,6 +287,24 @@
             sidebar.style.marginLeft = "-280px";
         }
     });
+
+    function confirmReset(event) {
+        event.preventDefault();
+        if (confirm("ATENÇÃO: Esta ação irá APAGAR TODOS OS DADOS do banco de dados. Tem certeza que deseja continuar?")) {
+            fetch("{{ url_for('reset_database') }}", {
+                method: "POST"
+            }).then(response => {
+                if (response.ok) {
+                    window.location.href = "{{ url_for('index') }}";
+                } else {
+                    alert("Erro ao resetar o banco de dados.");
+                }
+            }).catch(error => {
+                console.error("Erro:", error);
+                alert("Erro de comunicação ao resetar o banco de dados.");
+            });
+        }
+    }
 </script>
 
 </body>
