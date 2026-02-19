@@ -230,6 +230,17 @@ def visualizar_alterados():
     itens = PedidoItens.query.order_by(PedidoItens.ultima_atualizacao.desc()).limit(500).all()
     return render_template('visualizar_alterados.html', itens=itens)
 
+@app.route('/reset_database', methods=['POST'])
+def reset_database():
+    if request.method == 'POST':
+        try:
+            db.drop_all()
+            db.create_all()
+            flash("Banco de dados resetado com sucesso!", "success")
+        except Exception as e:
+            flash(f"Erro ao resetar o banco de dados: {str(e)}", "error")
+        return redirect(url_for('index'))
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
